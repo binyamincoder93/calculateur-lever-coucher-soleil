@@ -76,3 +76,28 @@ async function getSunriseSunset(latitude, longitude) {
         return null;
     }
 }
+// Fonction pour calculer le lever et coucher de soleil
+function calculateSunriseSunset(latitude, longitude, dayOfYear) {
+    const rad = Math.PI / 180;
+    const delta = 23.44 * rad * Math.sin((360 / 365) * (dayOfYear - 81) * rad); // Déclinaison du soleil
+    const H = longitude / 15; // Heure solaire moyenne
+
+    // Calcul de l'angle horaire
+    const hourAngle = Math.acos(-Math.tan(latitude * rad) * Math.tan(delta)) * (180 / Math.PI);
+
+    // Calcul des heures de lever et coucher
+    const sunrise = 12 - (hourAngle / 15) + H; // Lever du soleil
+    const sunset = 12 + (hourAngle / 15) + H; // Coucher du soleil
+
+    return {
+        sunrise: formatTime(sunrise), // Formater le lever du soleil
+        sunset: formatTime(sunset)    // Formater le coucher du soleil
+    };
+}
+
+// Fonction pour formater l'heure en format heures:minutes
+function formatTime(time) {
+    const hours = Math.floor(time); // Récupère les heures entières
+    const minutes = Math.round((time - hours) * 60); // Convertir la partie décimale en minutes
+    return `${hours}h${minutes < 10 ? '0' + minutes : minutes}`; // Retourne au format "XhXX"
+}
