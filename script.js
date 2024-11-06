@@ -3,57 +3,47 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
     const resultDiv = document.getElementById("result");
     resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
 
-    // Vérification de l'entrée pour éviter les caractères spéciaux et mots courts
-    if (!city || city.length < 3 || /[^a-zA-Z\u00C0-\u017F\s-]/.test(city)) {
-        alert("Veuillez entrer un nom de ville valide.");
+    if (!city) {
+        alert("Veuillez entrer un nom de ville.");
         return;
     }
 
-    // Obtenir les coordonnées de la ville via l'API
+    // Vérifier la ville et obtenir les coordonnées via Google Maps API
     const coordinates = await getCoordinates(city);
 
     if (!coordinates) {
-        alert("Lieu non trouvé. Veuillez essayer un nom de ville valide.");
+        alert("Ville non trouvée. Essayez une autre ville.");
         return;
     }
 
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const sunData = calculateSunriseSunset(coordinates.lat, coordinates.lng, dayOfYear);
+    // Obtenir les horaires de lever et coucher du soleil
+    const sunData = await getSunriseSunset(coordinates.lat, coordinates.lng);
 
     resultDiv.innerHTML = `
         <h2>Données pour ${city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()}</h2>
-        <p>Lever du soleil : ${sunData.sunrise.toFixed(2)}h</p>
-        <p>Coucher du soleil : ${sunData.sunset.toFixed(2)}h</p>
+        <p>Lever du soleil : ${sunData.sunrise}</p>
+        <p>Coucher du soleil : ${sunData.sunset}</p>
     `;
 });
 
-// Fonction pour obtenir les coordonnées d'une ville
+// Fonction pour obtenir les coordonnées d'une ville via Google Maps API
 async function getCoordinates(city) {
     try {
-        const apiKey = '314115653ca54d109238cf1b1060a7bf'; // Ta clé API
-        const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`);
+        const apiKey = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Ta clé API
+        const response = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${apiKey}`
+        );
+
         const data = response.data;
 
-        // Vérifie que le lieu est une ville, un village ou un bourg
-        const location = data.results[0];
-        const components = location.components;
-        if (
-            !location ||
-            !components ||
-            !(
-                components.city ||
-                components.town ||
-                components.village ||
-                components.municipality
-            )
-        ) {
-            return null; // Rejet si le lieu n'est pas une ville/village/bourg valide
+        if (data.status !== "OK" || data.results.length === 0) {
+            return null; // Aucune ville trouvée
         }
 
+        const location = data.results[0].geometry.location;
         return {
-            lat: location.geometry.lat,
-            lng: location.geometry.lng,
+            lat: location.lat,
+            lng: location.lng,
         };
     } catch (error) {
         console.error("Erreur lors de la récupération des coordonnées :", error);
@@ -61,29 +51,28 @@ async function getCoordinates(city) {
     }
 }
 
-// Fonction pour obtenir le jour de l'année
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
-}
+// Fonction pour obtenir le lever et coucher de soleil via Sunrise-Sunset API
+async function getSunriseSunset(latitude, longitude) {
+    try {
+        const response = await axios.get(
+            `https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`
+        );
 
-// Fonction pour calculer le lever et coucher de soleil
-function calculateSunriseSunset(latitude, longitude, dayOfYear) {
-    const rad = Math.PI / 180;
-    const delta = 23.44 * rad * Math.sin((360 / 365) * (dayOfYear - 81) * rad); // Déclinaison du soleil
-    const H = longitude / 15; // Heure solaire moyenne
+        const data = response.data;
 
-    // Calcul de l'angle horaire
-    const hourAngle = Math.acos(-Math.tan(latitude * rad) * Math.tan(delta)) * (180 / Math.PI);
+        // Conversion du temps en format lisible
+        const sunrise = new Date(data.results.sunrise).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
+        const sunset = new Date(data.results.sunset).toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit",
+        });
 
-    // Calcul des heures de lever et coucher
-    const sunrise = 12 - (hourAngle / 15) + H; // Lever du soleil
-    const sunset = 12 + (hourAngle / 15) + H; // Coucher du soleil
-
-    return {
-        sunrise: sunrise,
-        sunset: sunset
-    };
+        return { sunrise, sunset };
+    } catch (error) {
+        console.error("Erreur lors de la récupération des données de lever/coucher du soleil :", error);
+        return null;
+    }
 }
