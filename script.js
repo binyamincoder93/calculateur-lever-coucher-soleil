@@ -3,17 +3,17 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
     const resultDiv = document.getElementById("result");
     resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
 
-    // Vérification de l'entrée pour les caractères non valides et longueur minimale
+    // Vérification de l'entrée pour éviter les caractères spéciaux et mots courts
     if (!city || city.length < 3 || /[^a-zA-Z\u00C0-\u017F\s-]/.test(city)) {
-        alert("Veuillez entrer un nom de ville valide (au moins 3 lettres, sans chiffres ou caractères spéciaux).");
+        alert("Veuillez entrer un nom de ville valide.");
         return;
     }
 
-    // Vérification des coordonnées de la ville via API
+    // Obtenir les coordonnées de la ville via l'API
     const coordinates = await getCoordinates(city);
 
     if (!coordinates) {
-        alert("Ville non trouvée. Essayez une autre ville.");
+        alert("Lieu non trouvé. Veuillez essayer un nom de ville valide.");
         return;
     }
 
@@ -35,11 +35,20 @@ async function getCoordinates(city) {
         const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`);
         const data = response.data;
 
-        // Recherche dans les composants pour vérifier si c'est bien une ville
+        // Vérifie que le lieu est une ville, un village ou un bourg
         const location = data.results[0];
         const components = location.components;
-        if (!location || !components || !(components.city || components.town || components.village)) {
-            return null; // La ville n'est pas une vraie ville reconnue
+        if (
+            !location ||
+            !components ||
+            !(
+                components.city ||
+                components.town ||
+                components.village ||
+                components.municipality
+            )
+        ) {
+            return null; // Rejet si le lieu n'est pas une ville/village/bourg valide
         }
 
         return {
