@@ -1,71 +1,71 @@
-document.getElementById("searchBtn").addEventListener("click", async function () {
-    const city = document.getElementById("cityInput").value.trim();
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
-
-    // Vérification des coordonnées de la ville via API
-    const coordinates = await getCoordinates(city);
-    
-    if (!coordinates) {
-        alert("Ville non trouvée. Essayez une autre ville.");
-        return;
-    }
-
-    const today = new Date();
-    const dayOfYear = getDayOfYear(today);
-    const sunData = calculateSunriseSunset(coordinates.lat, coordinates.lng, dayOfYear);
-
-    resultDiv.innerHTML = `
-        <h2>Données pour ${city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()}</h2>
-        <p>Lever du soleil : ${sunData.sunrise.toFixed(2)}h</p>
-        <p>Coucher du soleil : ${sunData.sunset.toFixed(2)}h</p>
-    `;
-});
-
-// Fonction pour obtenir les coordonnées d'une ville
+// Fonction pour récupérer les coordonnées d'une ville via l'API OpenCageData
 async function getCoordinates(city) {
+    const apiKey = 'YOUR_API_KEY';  // Remplace par ta clé API OpenCage ici
+    const url = `https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`;
+
     try {
-        const apiKey = '314115653ca54d109238cf1b1060a7bf'; // Ta clé API
-        const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`);
-        const data = response.data;
-
-        if (data.results.length === 0) {
-            return null; // Aucune ville trouvée
+        const response = await fetch(url);
+        const data = await response.json();
+        if (data.results.length > 0) {
+            return {
+                lat: data.results[0].geometry.lat,
+                lng: data.results[0].geometry.lng
+            };
+        } else {
+            return null;
         }
-
-        return {
-            lat: data.results[0].geometry.lat,
-            lng: data.results[0].geometry.lng,
-        };
     } catch (error) {
         console.error("Erreur lors de la récupération des coordonnées :", error);
         return null;
     }
 }
 
-// Fonction pour obtenir le jour de l'année
-function getDayOfYear(date) {
-    const start = new Date(date.getFullYear(), 0, 0);
-    const diff = date - start;
-    const oneDay = 1000 * 60 * 60 * 24;
-    return Math.floor(diff / oneDay);
+// Fonction pour récupérer les horaires de lever et coucher du soleil avec SunriseSunset.io
+async function getSunriseSunset(city) {
+    const coordinates = await getCoordinates(city);  // Obtient la latitude et la longitude de la ville
+    
+    if (!coordinates) {
+        alert("Ville non trouvée. Essayez une autre ville.");
+        return;
+    }
+
+    const latitude = coordinates.lat;
+    const longitude = coordinates.lng;
+
+    const url = `https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`; // Formatté en ISO 8601 (UTC)
+
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.status === "OK") {
+            const sunrise = new Date(data.results.sunrise);  // Heure du lever du soleil
+            const sunset = new Date(data.results.sunset);    // Heure du coucher du soleil
+
+            // Conversion en heures locales
+            const sunriseHours = sunrise.getHours() + (sunrise.getMinutes() / 60);
+            const sunsetHours = sunset.getHours() + (sunset.getMinutes() / 60);
+
+            const resultDiv = document.getElementById("result");
+            resultDiv.innerHTML = `
+                <h2>Données pour ${city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()}</h2>
+                <p>Lever du soleil : ${sunriseHours.toFixed(2)}h</p>
+                <p>Coucher du soleil : ${sunsetHours.toFixed(2)}h</p>
+            `;
+        } else {
+            alert("Erreur lors de la récupération des données.");
+        }
+    } catch (error) {
+        console.error("Erreur lors de la récupération des données :", error);
+    }
 }
 
-// Fonction pour calculer le lever et coucher de soleil
-function calculateSunriseSunset(latitude, longitude, dayOfYear) {
-    const rad = Math.PI / 180;
-    const delta = 23.44 * rad * Math.sin((360 / 365) * (dayOfYear - 81) * rad); // Déclinaison du soleil
-    const H = longitude / 15; // Heure solaire moyenne
-
-    // Calcul de l'angle horaire
-    const hourAngle = Math.acos(-Math.tan(latitude * rad) * Math.tan(delta)) * (180 / Math.PI);
-
-    // Calcul des heures de lever et coucher
-    const sunrise = 12 - (hourAngle / 15) + H; // Lever du soleil
-    const sunset = 12 + (hourAngle / 15) + H; // Coucher du soleil
-
-    return {
-        sunrise: sunrise,
-        sunset: sunset
-    };
-}
+// Événement au clic du bouton pour rechercher les horaires
+document.getElementById("searchBtn").addEventListener("click", function() {
+    const city = document.getElementById("cityInput").value.trim();
+    if (city) {
+        getSunriseSunset(city);  // Appel de la fonction pour récupérer les horaires
+    } else {
+        alert("Veuillez entrer un nom de ville.");
+    }
+});
