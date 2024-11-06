@@ -3,17 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculateur de Lever/Coucher de Soleil</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Calculateur de Lever et Coucher de Soleil</title>
+    <link rel="stylesheet" href="style.css"> <!-- Lien vers le fichier CSS -->
 </head>
 <body>
     <div class="container">
-        <h1>Calculateur de Lever/Coucher de Soleil</h1>
-        <input type="text" id="cityInput" placeholder="Entrez le nom de la ville">
-        <button id="searchBtn">Rechercher</button>
+        <h1>Calculateur de Lever et Coucher de Soleil</h1>
+        <div class="input-group">
+            <input type="text" id="cityInput" placeholder="Entrez une ville" />
+            <button id="searchBtn">Rechercher</button>
+        </div>
         <div id="result"></div>
     </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
-    <script src="app.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
