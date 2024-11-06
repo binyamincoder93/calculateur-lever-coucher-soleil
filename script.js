@@ -35,10 +35,10 @@ async function getCoordinates(city) {
         const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`);
         const data = response.data;
 
-        // Vérification que le résultat est bien une ville ou un lieu habité
+        // Vérification pour s'assurer que la réponse contient une ville ou une localité
         const location = data.results[0];
-        if (!location || !location.components || !location.components.city) {
-            return null; // Aucune ville réelle trouvée
+        if (!location || !location.components || !(location.components.city || location.components.town)) {
+            return null; // La ville n'est pas une vraie ville connue
         }
 
         return {
