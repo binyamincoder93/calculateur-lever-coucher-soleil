@@ -1,103 +1,24 @@
-document.getElementById("searchBtn").addEventListener("click", async function () {
-    const city = document.getElementById("cityInput").value.trim();
-    const resultDiv = document.getElementById("result");
-    resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
+// Remplace avec ta clé API SerpApi
+const apiKey = '6165916694c6c7025deef5ab';  
 
-    if (!city) {
-        alert("Veuillez entrer un nom de ville.");
-        return;
-    }
+// Exemple de requête pour rechercher quelque chose comme 'Coffee' à Austin, Texas
+const city = 'Austin, Texas'; // La ville de ta recherche
+const query = 'Coffee'; // Le terme de recherche
 
-    // Vérifier la ville et obtenir les coordonnées via Google Maps API
-    const coordinates = await getCoordinates(city);
-
-    if (!coordinates) {
-        alert("Ville non trouvée. Essayez une autre ville.");
-        return;
-    }
-
-    // Obtenir les horaires de lever et coucher du soleil via l'API Sunrise-Sunset
-    const sunData = await getSunriseSunset(coordinates.lat, coordinates.lng);
-
-    resultDiv.innerHTML = `
-        <h2>Données pour ${city.charAt(0).toUpperCase() + city.slice(1).toLowerCase()}</h2>
-        <p>Lever du soleil : ${sunData.sunrise}</p>
-        <p>Coucher du soleil : ${sunData.sunset}</p>
-    `;
-});
-
-// Fonction pour obtenir les coordonnées d'une ville via Google Maps API
-async function getCoordinates(city) {
+// Fonction pour récupérer les résultats via SerpApi
+async function fetchSearchResults() {
+    const url = `https://serpapi.com/search.json?q=${query}&location=${city}&hl=en&gl=us&google_domain=google.com&api_key=${apiKey}`;
+    
     try {
-        const apiKey = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Remplacez par votre clé API Google Maps
-        const response = await axios.get(
-            `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${apiKey}`
-        );
+        const response = await fetch(url);
+        const data = await response.json();
 
-        const data = response.data;
-
-        if (data.status !== "OK" || data.results.length === 0) {
-            return null; // Aucune ville trouvée
-        }
-
-        const location = data.results[0].geometry.location;
-        return {
-            lat: location.lat,
-            lng: location.lng,
-        };
+        // Vérification des résultats
+        console.log(data);
     } catch (error) {
-        console.error("Erreur lors de la récupération des coordonnées :", error);
-        return null;
+        console.error("Erreur lors de la récupération des données :", error);
     }
 }
 
-// Fonction pour obtenir le lever et coucher de soleil via Sunrise-Sunset API
-async function getSunriseSunset(latitude, longitude) {
-    try {
-        const response = await axios.get(
-            `https://api.sunrise-sunset.org/json?lat=${latitude}&lng=${longitude}&formatted=0`
-        );
-
-        const data = response.data;
-
-        // Conversion du temps en format lisible
-        const sunrise = new Date(data.results.sunrise).toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-        const sunset = new Date(data.results.sunset).toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-
-        return { sunrise, sunset };
-    } catch (error) {
-        console.error("Erreur lors de la récupération des données de lever/coucher du soleil :", error);
-        return null;
-    }
-}
-// Fonction pour calculer le lever et coucher de soleil
-function calculateSunriseSunset(latitude, longitude, dayOfYear) {
-    const rad = Math.PI / 180;
-    const delta = 23.44 * rad * Math.sin((360 / 365) * (dayOfYear - 81) * rad); // Déclinaison du soleil
-    const H = longitude / 15; // Heure solaire moyenne
-
-    // Calcul de l'angle horaire
-    const hourAngle = Math.acos(-Math.tan(latitude * rad) * Math.tan(delta)) * (180 / Math.PI);
-
-    // Calcul des heures de lever et coucher
-    const sunrise = 12 - (hourAngle / 15) + H; // Lever du soleil
-    const sunset = 12 + (hourAngle / 15) + H; // Coucher du soleil
-
-    return {
-        sunrise: formatTime(sunrise), // Formater le lever du soleil
-        sunset: formatTime(sunset)    // Formater le coucher du soleil
-    };
-}
-
-// Fonction pour formater l'heure en format heures:minutes
-function formatTime(time) {
-    const hours = Math.floor(time); // Récupère les heures entières
-    const minutes = Math.round((time - hours) * 60); // Convertir la partie décimale en minutes
-    return `${hours}h${minutes < 10 ? '0' + minutes : minutes}`; // Retourne au format "XhXX"
-}
+// Appeler la fonction pour obtenir les données
+fetchSearchResults();
