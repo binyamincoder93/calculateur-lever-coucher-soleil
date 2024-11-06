@@ -16,7 +16,7 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
         return;
     }
 
-    // Obtenir les horaires de lever et coucher du soleil
+    // Obtenir les horaires de lever et coucher du soleil via l'API Sunrise-Sunset
     const sunData = await getSunriseSunset(coordinates.lat, coordinates.lng);
 
     resultDiv.innerHTML = `
@@ -29,7 +29,7 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
 // Fonction pour obtenir les coordonnées d'une ville via Google Maps API
 async function getCoordinates(city) {
     try {
-        const apiKey = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Ta clé API
+        const apiKey = 'VOTRE_CLE_API_GOOGLE_MAPS'; // Remplacez par votre clé API Google Maps
         const response = await axios.get(
             `https://maps.googleapis.com/maps/api/geocode/json?address=${city}&key=${apiKey}`
         );
