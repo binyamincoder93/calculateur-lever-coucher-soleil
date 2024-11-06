@@ -3,9 +3,15 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
     const resultDiv = document.getElementById("result");
     resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
 
+    // Vérification de l'entrée pour les caractères non valides
+    if (!city || /[^a-zA-Z\u00C0-\u017F\s-]/.test(city)) {
+        alert("Veuillez entrer un nom de ville valide sans chiffres ou caractères spéciaux.");
+        return;
+    }
+
     // Vérification des coordonnées de la ville via API
     const coordinates = await getCoordinates(city);
-    
+
     if (!coordinates) {
         alert("Ville non trouvée. Essayez une autre ville.");
         return;
