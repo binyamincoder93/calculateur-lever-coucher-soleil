@@ -3,9 +3,9 @@ document.getElementById("searchBtn").addEventListener("click", async function ()
     const resultDiv = document.getElementById("result");
     resultDiv.innerHTML = ""; // Réinitialiser le contenu précédent
 
-    // Vérification de l'entrée pour les caractères non valides
-    if (!city || /[^a-zA-Z\u00C0-\u017F\s-]/.test(city)) {
-        alert("Veuillez entrer un nom de ville valide sans chiffres ou caractères spéciaux.");
+    // Vérification de l'entrée pour les caractères non valides et longueur minimale
+    if (!city || city.length < 3 || /[^a-zA-Z\u00C0-\u017F\s-]/.test(city)) {
+        alert("Veuillez entrer un nom de ville valide (au moins 3 lettres, sans chiffres ou caractères spéciaux).");
         return;
     }
 
@@ -35,13 +35,15 @@ async function getCoordinates(city) {
         const response = await axios.get(`https://api.opencagedata.com/geocode/v1/json?q=${city}&key=${apiKey}`);
         const data = response.data;
 
-        if (data.results.length === 0) {
-            return null; // Aucune ville trouvée
+        // Vérification que le résultat est bien une ville ou un lieu habité
+        const location = data.results[0];
+        if (!location || !location.components || !location.components.city) {
+            return null; // Aucune ville réelle trouvée
         }
 
         return {
-            lat: data.results[0].geometry.lat,
-            lng: data.results[0].geometry.lng,
+            lat: location.geometry.lat,
+            lng: location.geometry.lng,
         };
     } catch (error) {
         console.error("Erreur lors de la récupération des coordonnées :", error);
